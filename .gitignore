@@ -1,0 +1,21 @@
+# Output of the sorter
+sorted/
+*.csv
+
+# Never commit the full clinical dataset
+data/
+Athka/
+Gradeable/
+Ungradeable/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
