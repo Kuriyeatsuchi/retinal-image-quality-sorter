@@ -1,0 +1,110 @@
+image         variant            size   v2 rule               v3 rule
+005d8a48-2f6  original          103KB   ungradeable           ungradeable
+              smaller_jpeg       81KB   ungradeable           ungradeable
+              larger_jpeg       382KB   gradeable  CHANGED    ungradeable
+02c2f2c7-1f1  original         3569KB   ungradeable           ungradeable
+              smaller_jpeg      186KB   ungradeable           ungradeable
+              larger_jpeg      6272KB   ungradeable           ungradeable
+0ebada4c-515  original         4496KB   gradeable             gradeable
+              smaller_jpeg      299KB   gradeable             gradeable
+              larger_jpeg      7621KB   gradeable             gradeable
+112eaa04-bcb  original         4462KB   gradeable             gradeable
+              smaller_jpeg      311KB   gradeable             gradeable
+              larger_jpeg      7545KB   gradeable             gradeable
+16dd3090-274  original          103KB   ungradeable           ungradeable
+              smaller_jpeg       83KB   ungradeable           ungradeable
+              larger_jpeg       320KB   gradeable  CHANGED    ungradeable
+1d7f4676-470  original         4486KB   gradeable             gradeable
+              smaller_jpeg      312KB   gradeable             gradeable
+              larger_jpeg      7581KB   gradeable             gradeable
+1dd6346c-110  original          102KB   ungradeable           ungradeable
+              smaller_jpeg       82KB   ungradeable           ungradeable
+              larger_jpeg       312KB   gradeable  CHANGED    ungradeable
+2609151d-cfc  original          103KB   ungradeable           ungradeable
+              smaller_jpeg       82KB   ungradeable           ungradeable
+              larger_jpeg       380KB   gradeable  CHANGED    ungradeable
+31934a3f-6d2  original         4451KB   gradeable             gradeable
+              smaller_jpeg      280KB   gradeable             gradeable
+              larger_jpeg      7587KB   gradeable             gradeable
+31b76e5f-5f4  original           83KB   ungradeable           ungradeable
+              smaller_jpeg       71KB   ungradeable           ungradeable
+              larger_jpeg       241KB   ungradeable           ungradeable
+321150bd-493  original         4449KB   gradeable             gradeable
+              smaller_jpeg      289KB   gradeable             gradeable
+              larger_jpeg      7556KB   gradeable             gradeable
+37fa678a-0e6  original         4475KB   gradeable             gradeable
+              smaller_jpeg      310KB   gradeable             gradeable
+              larger_jpeg      7565KB   gradeable             gradeable
+3b932c95-555  original           92KB   ungradeable           ungradeable
+              smaller_jpeg       76KB   ungradeable           ungradeable
+              larger_jpeg       305KB   ungradeable           ungradeable
+4b802505-a62  original          103KB   ungradeable           ungradeable
+              smaller_jpeg       83KB   ungradeable           ungradeable
+              larger_jpeg       362KB   gradeable  CHANGED    ungradeable
+5bbb9079-0d9  original           95KB   ungradeable           ungradeable
+              smaller_jpeg       77KB   ungradeable           ungradeable
+              larger_jpeg       328KB   ungradeable           ungradeable
+5c0f2712-e00  original          103KB   ungradeable           ungradeable
+              smaller_jpeg       80KB   ungradeable           ungradeable
+              larger_jpeg       377KB   gradeable  CHANGED    ungradeable
+5d5d99a2-816  original         4473KB   gradeable             gradeable
+              smaller_jpeg      302KB   gradeable             gradeable
+              larger_jpeg      7580KB   gradeable             gradeable
+6094bd6f-59f  original         4444KB   gradeable             gradeable
+              smaller_jpeg      305KB   gradeable             gradeable
+              larger_jpeg      7526KB   gradeable             gradeable
+60ea4ed5-ee2  original         4494KB   gradeable             gradeable
+              smaller_jpeg      304KB   gradeable             gradeable
+              larger_jpeg      7620KB   gradeable             gradeable
+65864665-5b0  original         4441KB   gradeable             gradeable
+              smaller_jpeg      310KB   gradeable             gradeable
+              larger_jpeg      7512KB   gradeable             gradeable
+7716034b-db2  original         4448KB   gradeable             gradeable
+              smaller_jpeg      307KB   gradeable             gradeable
+              larger_jpeg      7533KB   gradeable             gradeable
+79ec7fb7-b36  original         4457KB   gradeable             gradeable
+              smaller_jpeg      306KB   gradeable             gradeable
+              larger_jpeg      7549KB   gradeable             gradeable
+865c42e0-cab  original           98KB   ungradeable           ungradeable
+              smaller_jpeg       81KB   ungradeable           ungradeable
+              larger_jpeg       327KB   ungradeable           ungradeable
+8f39b98c-79b  original         4453KB   gradeable             gradeable
+              smaller_jpeg      304KB   gradeable             gradeable
+              larger_jpeg      7543KB   gradeable             gradeable
+a0c2d7fd-b32  original          103KB   ungradeable           ungradeable
+              smaller_jpeg       81KB   ungradeable           ungradeable
+              larger_jpeg       380KB   gradeable  CHANGED    ungradeable
+a188c24a-028  original           92KB   ungradeable           ungradeable
+              smaller_jpeg       75KB   ungradeable           ungradeable
+              larger_jpeg       310KB   ungradeable           ungradeable
+b5820936-134  original          103KB   ungradeable           ungradeable
+              smaller_jpeg       82KB   ungradeable           ungradeable
+              larger_jpeg       374KB   ungradeable           ungradeable
+c51066bd-dbc  original           90KB   ungradeable           ungradeable
+              smaller_jpeg       76KB   ungradeable           ungradeable
+              larger_jpeg       292KB   ungradeable           ungradeable
+d6abd061-3d1  original           97KB   ungradeable           ungradeable
+              smaller_jpeg       78KB   ungradeable           ungradeable
+              larger_jpeg       334KB   ungradeable           ungradeable
+da38fe42-fc1  original         4456KB   gradeable             gradeable
+              smaller_jpeg      301KB   gradeable             gradeable
+              larger_jpeg      7558KB   gradeable             gradeable
+de297878-306  original          103KB   ungradeable           ungradeable
+              smaller_jpeg       81KB   ungradeable           ungradeable
+              larger_jpeg       343KB   gradeable  CHANGED    ungradeable
+defa2c3a-d12  original          103KB   ungradeable           ungradeable
+              smaller_jpeg       82KB   ungradeable           ungradeable
+              larger_jpeg       350KB   gradeable  CHANGED    ungradeable
+e35f6b24-462  original         4486KB   gradeable             gradeable
+              smaller_jpeg      298KB   gradeable             gradeable
+              larger_jpeg      7610KB   gradeable             gradeable
+edda44d1-0ae  original          102KB   ungradeable           ungradeable
+              smaller_jpeg       81KB   ungradeable           ungradeable
+              larger_jpeg       379KB   gradeable  CHANGED    ungradeable
+ef81f690-fe1  original         4470KB   gradeable             gradeable
+              smaller_jpeg      303KB   gradeable             gradeable
+              larger_jpeg      7579KB   gradeable             gradeable
+
+35 unique images. Decisions that changed just by re-saving the file:
+  v2 rule  ->  smaller_jpeg: 0/35, larger_jpeg: 10/35
+  v3 rule  ->  smaller_jpeg: 0/35, larger_jpeg: 0/35

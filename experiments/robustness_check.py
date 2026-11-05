@@ -52,14 +52,14 @@ def main():
     paths = [p for p in paths if os.path.basename(p) not in duplicates]
 
     flips = {"v2": Counter(), "v3": Counter()}
-    print(f"{'image':<14}{'variant':<14}{'size':>9}   v2 rule        v3 rule")
+    print(f"{'image':<14}{'variant':<14}{'size':>9}   {'v2 rule':<22}v3 rule")
     with tempfile.TemporaryDirectory() as tmp:
         for path in paths:
             image = cv2.imread(path)
             old0, new0, size0 = decisions(path, thresholds)
             name = os.path.basename(path)[:12]
             print(f"{name:<14}{'original':<14}{size0 / 1024:>7.0f}KB   "
-                  f"{'gradeable' if old0 else 'ungradeable':<15}{'gradeable' if new0 else 'ungradeable'}")
+                  f"{'gradeable' if old0 else 'ungradeable':<22}{'gradeable' if new0 else 'ungradeable'}")
             for variant, make in VARIANTS.items():
                 out, params = make(image)
                 out_path = os.path.join(tmp, f"{variant}.jpg")
@@ -68,7 +68,7 @@ def main():
                 mark_old = "  CHANGED" if old != old0 else ""
                 mark_new = "  CHANGED" if new != new0 else ""
                 print(f"{'':<14}{variant:<14}{size / 1024:>7.0f}KB   "
-                      f"{('gradeable' if old else 'ungradeable') + mark_old:<15}"
+                      f"{('gradeable' if old else 'ungradeable') + mark_old:<22}"
                       f"{('gradeable' if new else 'ungradeable') + mark_new}")
                 flips["v2"][variant] += old != old0
                 flips["v3"][variant] += new != new0

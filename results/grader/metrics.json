@@ -1,0 +1,74 @@
+{
+  "n_images": 279,
+  "grade_counts": [
+    173,
+    22,
+    49,
+    12,
+    23
+  ],
+  "quadratic_weighted_kappa": 0.828,
+  "accuracy": 0.785,
+  "accuracy_always_majority_grade": 0.62,
+  "recall_per_grade": {
+    "No DR": 0.965,
+    "Mild": 0.409,
+    "Moderate": 0.653,
+    "Severe": 0.0,
+    "Proliferative": 0.478
+  },
+  "any_dr_vs_none": {
+    "auc": 0.997,
+    "sensitivity": 1.0,
+    "specificity": 0.965,
+    "positives": 106,
+    "negatives": 173
+  },
+  "referable_dr_grade2plus": {
+    "auc": 0.942,
+    "sensitivity": 0.845,
+    "specificity": 0.918,
+    "positives": 84,
+    "negatives": 195
+  },
+  "confusion_matrix": [
+    [
+      167,
+      3,
+      2,
+      0,
+      1
+    ],
+    [
+      0,
+      9,
+      12,
+      0,
+      1
+    ],
+    [
+      0,
+      11,
+      32,
+      0,
+      6
+    ],
+    [
+      0,
+      0,
+      10,
+      0,
+      2
+    ],
+    [
+      0,
+      2,
+      10,
+      0,
+      11
+    ]
+  ],
+  "chosen_C": 0.3,
+  "cross_validated_kappa": 0.854,
+  "n_training_images": 1171
+}

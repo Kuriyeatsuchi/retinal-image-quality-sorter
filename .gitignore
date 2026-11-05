@@ -19,3 +19,9 @@ venv/
 .DS_Store
 .vscode/
 .idea/
+
+# Downloaded model weights, cached features and trained models (reproducible)
+models/
+features_cache/
+*.joblib
+*.npz

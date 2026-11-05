@@ -1,0 +1,25 @@
+--- old defaults (min diameter 1000, min sharpness 0.15)
+
+All photos
+  by sorter decision:
+    blurry                 n=28    exact=0.536  within-one-grade=0.893  kappa=0.522
+    passed all checks      n=1086  exact=0.880  within-one-grade=0.946  kappa=0.845
+    resolution too low     n=331   exact=0.921  within-one-grade=0.988  kappa=0.921
+    too bright             n=5     exact=1.000  within-one-grade=1.000  kappa=1.000
+  by retina diameter:
+    <700 px                n=149   exact=0.987  within-one-grade=0.987  kappa=0.855
+    700-1000 px            n=182   exact=0.868  within-one-grade=0.989  kappa=0.921
+    1000-1500 px           n=970   exact=0.931  within-one-grade=0.973  kappa=0.810
+    >1500 px               n=149   exact=0.490  within-one-grade=0.758  kappa=0.461
+
+Diseased photos only (grade >= 1)
+  by sorter decision:
+    blurry                 n=21    exact=0.476  within-one-grade=0.905  kappa=0.434
+    passed all checks      n=209   exact=0.455  within-one-grade=0.751  kappa=0.468
+    resolution too low     n=52    exact=0.673  within-one-grade=0.942  kappa=0.659
+    too bright             n=1     exact=1.000  within-one-grade=1.000  kappa=nan
+  by retina diameter:
+    <700 px                n=2     exact=0.500  within-one-grade=0.500  kappa=0.000
+    700-1000 px            n=50    exact=0.680  within-one-grade=0.960  kappa=0.664
+    1000-1500 px           n=87    exact=0.402  within-one-grade=0.793  kappa=0.531
+    >1500 px               n=144   exact=0.493  within-one-grade=0.750  kappa=0.408

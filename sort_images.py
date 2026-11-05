@@ -12,8 +12,8 @@ Exact duplicate files are detected and reported, and can be skipped.
 
 Usage:
     python sort_images.py INPUT_DIR [--output OUTPUT_DIR] [--report results.csv]
-                          [--min-brightness 50] [--max-brightness 210]
-                          [--min-diameter 1000] [--min-sharpness 0.15]
+                          [--min-brightness 50] [--max-brightness 240]
+                          [--min-diameter 400] [--min-sharpness 0.05]
                           [--skip-duplicates] [--move] [--legacy]
 """
 

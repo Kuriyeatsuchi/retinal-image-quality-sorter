@@ -41,9 +41,9 @@ MIN_RETINA_AREA_FRACTION = 0.15
 @dataclass
 class Thresholds:
     min_brightness: float = 50      # below: underexposed
-    max_brightness: float = 210     # above: washed out / overexposed
-    min_diameter_px: int = 1000     # below: too low resolution
-    min_sharpness: float = 0.15     # below: blurry / out of focus
+    max_brightness: float = 240     # above: saturated (washed-out photos are also caught as blurry)
+    min_diameter_px: int = 400      # below: thumbnail-sized, too few pixels to grade
+    min_sharpness: float = 0.05     # below: blurry / out of focus
 
 
 @dataclass
