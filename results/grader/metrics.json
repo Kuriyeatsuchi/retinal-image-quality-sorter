@@ -68,6 +68,40 @@
       11
     ]
   ],
+  "confidence_intervals_95": {
+    "accuracy": [
+      0.733,
+      0.829
+    ],
+    "any_dr_sensitivity": [
+      0.965,
+      1.0
+    ],
+    "any_dr_specificity": [
+      0.926,
+      0.984
+    ],
+    "referable_dr_sensitivity": [
+      0.753,
+      0.907
+    ],
+    "referable_dr_specificity": [
+      0.871,
+      0.949
+    ],
+    "quadratic_weighted_kappa": [
+      0.77,
+      0.88
+    ],
+    "any_dr_auc": [
+      0.993,
+      1.0
+    ],
+    "referable_dr_auc": [
+      0.911,
+      0.968
+    ]
+  },
   "chosen_C": 0.3,
   "cross_validated_kappa": 0.854,
   "n_training_images": 1171

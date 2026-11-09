@@ -4,7 +4,8 @@ Retinal image quality sorter.
 Sorts retinal fundus photos into "Gradeable" and "Ungradeable" folders.
 A photo is gradeable only if, measured inside the retina, it is:
 
-  - neither too dark nor washed out    (brightness)
+  - neither too dark nor too bright    (brightness)
+  - not washed out                     (contrast)
   - high enough resolution             (retina diameter in pixels)
   - in focus                           (sharpness)
 
@@ -12,7 +13,7 @@ Exact duplicate files are detected and reported, and can be skipped.
 
 Usage:
     python sort_images.py INPUT_DIR [--output OUTPUT_DIR] [--report results.csv]
-                          [--min-brightness 50] [--max-brightness 240]
+                          [--min-brightness 50] [--max-brightness 240] [--min-contrast 0.03]
                           [--min-diameter 400] [--min-sharpness 3.5]
                           [--skip-duplicates] [--move] [--legacy]
 """
@@ -32,7 +33,7 @@ import quality
 
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 REPORT_FIELDS = ["file", "label", "reason", "duplicate_of",
-                 "brightness", "diameter_px", "sharpness", "size_kb"]
+                 "brightness", "contrast", "diameter_px", "sharpness", "size_kb"]
 
 
 def list_images(input_dir):
@@ -139,6 +140,8 @@ def main():
                         help=f"Minimum brightness inside the retina, 0-255 (default: {defaults.min_brightness})")
     parser.add_argument("--max-brightness", type=float, default=defaults.max_brightness,
                         help=f"Maximum brightness inside the retina, 0-255 (default: {defaults.max_brightness})")
+    parser.add_argument("--min-contrast", type=float, default=defaults.min_contrast,
+                        help=f"Minimum contrast inside the retina (default: {defaults.min_contrast})")
     parser.add_argument("--min-diameter", type=int, default=defaults.min_diameter_px,
                         help=f"Minimum retina diameter in pixels (default: {defaults.min_diameter_px})")
     parser.add_argument("--min-sharpness", type=float, default=defaults.min_sharpness,
@@ -155,6 +158,7 @@ def main():
     thresholds = quality.Thresholds(
         min_brightness=args.min_brightness,
         max_brightness=args.max_brightness,
+        min_contrast=args.min_contrast,
         min_diameter_px=args.min_diameter,
         min_sharpness=args.min_sharpness,
     )
@@ -167,7 +171,8 @@ def main():
     for r in results:
         detail = ""
         if "sharpness" in r:
-            detail = (f"  brightness={r['brightness']}, diameter={r['diameter_px']:.0f}px, "
+            detail = (f"  brightness={r['brightness']}, contrast={r['contrast']}, "
+                      f"diameter={r['diameter_px']:.0f}px, "
                       f"sharpness={r['sharpness']}")
         dup = f"  [duplicate of {r['duplicate_of']}]" if r.get("duplicate_of") else ""
         print(f"{r['label']:<12} {r['file']}  ({r['reason']}){detail}{dup}")

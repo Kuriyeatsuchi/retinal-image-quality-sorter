@@ -8,6 +8,10 @@ drag averages down by an amount that depends on the camera's framing.
 Measurements
 ------------
 brightness   Mean HSV value (0-255) inside the retina.
+contrast     Coefficient of variation (standard deviation / mean) of the green
+             channel inside the retina. A washed-out photo is almost uniformly
+             pale, so it scores very low even when it is bright; a vivid but
+             crisp photo keeps its contrast.
 diameter_px  Diameter of the retina in the original image, in pixels.
              A direct measure of resolution, independent of JPEG compression.
 sharpness    Variance of the Laplacian of the green channel (x1000 for
@@ -47,7 +51,8 @@ MIN_RETINA_AREA_FRACTION = 0.15
 @dataclass
 class Thresholds:
     min_brightness: float = 50      # below: underexposed
-    max_brightness: float = 240     # above: saturated (washed-out photos are also caught as blurry)
+    max_brightness: float = 240     # above: saturated
+    min_contrast: float = 0.03      # below: washed out (almost uniformly pale)
     min_diameter_px: int = 400      # below: thumbnail-sized, too few pixels to grade
     min_sharpness: float = 3.5      # below: blurry / out of focus
 
@@ -56,6 +61,7 @@ class Thresholds:
 class Measurements:
     retina_found: bool
     brightness: float = 0.0
+    contrast: float = 0.0
     diameter_px: float = 0.0
     sharpness: float = 0.0
 
@@ -102,6 +108,10 @@ def measure(image_bgr):
     hsv_value = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)[:, :, 2]
     brightness = float(hsv_value[circle_mask(image_bgr.shape, cx, cy, r * 0.95)].mean())
 
+    # Contrast: spread of the green channel relative to its mean.
+    green = image_bgr[:, :, 1][circle_mask(image_bgr.shape, cx, cy, r * 0.9)].astype(np.float32)
+    contrast = float(green.std() / max(green.mean(), 1e-6))
+
     # Sharpness: place the retina on a square canvas, resample to a fixed size,
     # denoise, Laplacian. Fundus cameras often cut off the top and bottom of
     # the retina; padding (instead of stretching the visible part to a square)
@@ -111,6 +121,7 @@ def measure(image_bgr):
     return Measurements(
         retina_found=True,
         brightness=brightness,
+        contrast=contrast,
         diameter_px=2 * r,
         sharpness=sharpness,
     )
@@ -146,6 +157,8 @@ def decide(m: Measurements, t: Thresholds):
         return False, "too dark"
     if m.brightness > t.max_brightness:
         return False, "too bright"
+    if m.contrast < t.min_contrast:
+        return False, "washed out"
     if m.diameter_px < t.min_diameter_px:
         return False, "resolution too low"
     if m.sharpness < t.min_sharpness:
@@ -168,6 +181,7 @@ def legacy_decide(image_bgr, file_size_bytes, brightness_limit=35, size_threshol
 
 def as_dict(m: Measurements):
     d = asdict(m)
-    for key in ("brightness", "diameter_px", "sharpness"):
-        d[key] = round(d[key], 2 if key == "sharpness" else 1)
+    decimals = {"brightness": 1, "contrast": 3, "diameter_px": 1, "sharpness": 2}
+    for key, n in decimals.items():
+        d[key] = round(d[key], n)
     return d

@@ -7,7 +7,11 @@ Grades follow the usual 0-4 scale:
 Pipeline: pretrained ResNet18 features (see features.py) -> standardisation
 -> logistic regression. The regularisation strength is chosen by 5-fold
 cross-validation on train+validation combined; the test set is used once, at
-the end, for the reported numbers.
+the end, for the reported numbers. Each headline number comes with a 95%
+confidence interval, so it is clear how much it could move with a different
+sample of photos: Wilson score intervals for proportions (accuracy,
+sensitivity, specificity), which stay meaningful even at 100%, and bootstrap
+intervals (test set resampled with replacement) for AUC and kappa.
 
 Each split is given as a CSV with an image id column and a grade column,
 plus the folder containing the images. Rows whose image is missing from the
@@ -41,6 +45,7 @@ from features import FeatureExtractor  # noqa: E402
 
 GRADE_NAMES = ["No DR", "Mild", "Moderate", "Severe", "Proliferative"]
 C_GRID = [0.01, 0.03, 0.1, 0.3]
+N_BOOTSTRAP = 2000
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp")
 
 
@@ -106,6 +111,57 @@ def evaluate(y, proba):
     }
 
 
+def headline_metrics(y, proba):
+    """The numbers reported in the README, as a flat dict."""
+    pred = proba.argmax(1)
+    any_true, any_pred = y >= 1, pred >= 1
+    ref_true, ref_pred = y >= 2, pred >= 2
+    return {
+        "quadratic_weighted_kappa": cohen_kappa_score(y, pred, weights="quadratic"),
+        "accuracy": accuracy_score(y, pred),
+        "any_dr_auc": roc_auc_score(any_true, 1 - proba[:, 0]),
+        "any_dr_sensitivity": np.mean(any_pred[any_true]),
+        "any_dr_specificity": np.mean(~any_pred[~any_true]),
+        "referable_dr_auc": roc_auc_score(ref_true, proba[:, 2:].sum(1)),
+        "referable_dr_sensitivity": np.mean(ref_pred[ref_true]),
+        "referable_dr_specificity": np.mean(~ref_pred[~ref_true]),
+    }
+
+
+def wilson_interval(successes, total, z=1.96):
+    """95% Wilson score interval for a proportion."""
+    if total == 0:
+        return [0.0, 1.0]
+    p = successes / total
+    centre = (p + z * z / (2 * total)) / (1 + z * z / total)
+    half = z * np.sqrt(p * (1 - p) / total + z * z / (4 * total * total)) / (1 + z * z / total)
+    return [round(float(max(0.0, centre - half)), 3), round(float(min(1.0, centre + half)), 3)]
+
+
+def confidence_intervals(y, proba, n=N_BOOTSTRAP, seed=0):
+    """95% intervals: Wilson for proportions, percentile bootstrap for AUC and kappa."""
+    pred = proba.argmax(1)
+    intervals = {"accuracy": wilson_interval(int(np.sum(pred == y)), len(y))}
+    for prefix, cut in (("any_dr", 1), ("referable_dr", 2)):
+        truth, called = y >= cut, pred >= cut
+        intervals[f"{prefix}_sensitivity"] = wilson_interval(int(np.sum(called & truth)), int(truth.sum()))
+        intervals[f"{prefix}_specificity"] = wilson_interval(int(np.sum(~called & ~truth)), int((~truth).sum()))
+
+    rng = np.random.default_rng(seed)
+    samples = {"quadratic_weighted_kappa": [], "any_dr_auc": [], "referable_dr_auc": []}
+    for _ in range(n):
+        idx = rng.integers(0, len(y), len(y))
+        yb = y[idx]
+        if len(np.unique(yb >= 1)) < 2 or len(np.unique(yb >= 2)) < 2:
+            continue
+        values = headline_metrics(yb, proba[idx])
+        for key in samples:
+            samples[key].append(values[key])
+    for key, v in samples.items():
+        intervals[key] = [round(float(np.percentile(v, 2.5)), 3), round(float(np.percentile(v, 97.5)), 3)]
+    return intervals
+
+
 def save_confusion_plot(cm, path):
     import matplotlib
     matplotlib.use("Agg")
@@ -165,7 +221,9 @@ def main():
     best_c = max(cv_scores, key=cv_scores.get)
 
     model = make_model(best_c).fit(X_train, y_train)
-    metrics = evaluate(y_test, model.predict_proba(X_test))
+    test_proba = model.predict_proba(X_test)
+    metrics = evaluate(y_test, test_proba)
+    metrics["confidence_intervals_95"] = confidence_intervals(y_test, test_proba)
     metrics["chosen_C"] = best_c
     metrics["cross_validated_kappa"] = round(float(cv_scores[best_c]), 3)
     metrics["n_training_images"] = int(len(y_train))
@@ -175,14 +233,23 @@ def main():
         json.dump(metrics, f, indent=2)
     save_confusion_plot(metrics["confusion_matrix"], os.path.join(args.out, "confusion_matrix.png"))
 
-    m = metrics
-    print(f"\nTest set ({m['n_images']} images, grade counts {m['grade_counts']}):")
-    print(f"  Quadratic weighted kappa : {m['quadratic_weighted_kappa']}")
-    print(f"  Accuracy                 : {m['accuracy']}  "
+    m, ci = metrics, metrics["confidence_intervals_95"]
+
+    def fmt(value, key):
+        lo, hi = ci[key]
+        return f"{value:.3f} ({lo:.3f}-{hi:.3f})"
+
+    print(f"\nTest set ({m['n_images']} images, grade counts {m['grade_counts']}), "
+          f"with 95% intervals:")
+    print(f"  Quadratic weighted kappa : {fmt(m['quadratic_weighted_kappa'], 'quadratic_weighted_kappa')}")
+    print(f"  Accuracy                 : {fmt(m['accuracy'], 'accuracy')}  "
           f"(always predicting the most common grade: {m['accuracy_always_majority_grade']})")
-    for key, title in (("any_dr_vs_none", "Any DR vs none"), ("referable_dr_grade2plus", "Referable DR (2+)")):
+    for key, prefix, title in (("any_dr_vs_none", "any_dr", "Any DR vs none"),
+                               ("referable_dr_grade2plus", "referable_dr", "Referable DR (2+)")):
         b = m[key]
-        print(f"  {title:<25}: AUC {b['auc']}, sensitivity {b['sensitivity']}, specificity {b['specificity']}")
+        print(f"  {title:<25}: AUC {fmt(b['auc'], prefix + '_auc')}, "
+              f"sensitivity {fmt(b['sensitivity'], prefix + '_sensitivity')}, "
+              f"specificity {fmt(b['specificity'], prefix + '_specificity')}")
     print(f"  Recall per grade         : {m['recall_per_grade']}")
     print(f"\nSaved model and metrics to {args.out}/")
 

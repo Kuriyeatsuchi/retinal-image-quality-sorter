@@ -31,9 +31,9 @@ python sort_images.py examples --dry-run
 ```
 
 ```
-gradeable    gradeable.jpg  (passed all checks)  brightness=112.8, diameter=3464px, sharpness=160.94
-ungradeable  ungradeable_blurry.jpg  (blurry)  brightness=60.7, diameter=1910px, sharpness=1.17
-ungradeable  ungradeable_too_dark.jpg  (too dark)  brightness=24.5, diameter=3382px, sharpness=29.02
+gradeable    gradeable.jpg  (passed all checks)  brightness=112.8, contrast=0.302, diameter=3464px, sharpness=160.94
+ungradeable  ungradeable_blurry.jpg  (blurry)  brightness=60.7, contrast=0.107, diameter=1910px, sharpness=1.17
+ungradeable  ungradeable_too_dark.jpg  (too dark)  brightness=24.5, contrast=0.61, diameter=3382px, sharpness=29.02
 ```
 
 Without `--dry-run`, copies of the photos are placed in `sorted/Gradeable/` and `sorted/Ungradeable/`.
@@ -49,8 +49,9 @@ The retina is located first, by finding the bright circle on the black backgroun
 | Check | Measurement | Default | Catches |
 |---|---|---|---|
 | Brightness | Mean HSV value inside the retina | 50 – 240 | Underexposed or saturated photos |
+| Contrast | Standard deviation ÷ mean of the green channel inside the retina | ≥ 0.03 | Washed-out photos that are almost uniformly pale. A vivid but crisp photo can be just as bright, but it keeps its contrast. |
 | Resolution | Retina diameter in pixels | ≥ 400 px | Thumbnails with too few pixels to grade |
-| Sharpness | Variance of the Laplacian of the green channel (×1000), after placing the retina on a square canvas, resizing it to 512 px and blurring it | ≥ 3.5 | Out-of-focus and washed-out photos |
+| Sharpness | Variance of the Laplacian of the green channel (×1000), after placing the retina on a square canvas, resizing it to 512 px and blurring it | ≥ 3.5 | Out-of-focus and hazy photos |
 
 Notes on the sharpness check:
 - **Square canvas:** cameras often cut off the top and bottom of the retina. The visible part is padded rather than stretched, so the geometry is the same for every photo.
@@ -62,13 +63,14 @@ A photo is gradeable only if it passes every check. The sorter also detects **ex
 
 ```
 python sort_images.py INPUT_DIR [--output DIR] [--report results.csv] [--dry-run]
-    --min-brightness 50   --max-brightness 240   --min-diameter 400   --min-sharpness 3.5
+    --min-brightness 50   --max-brightness 240   --min-contrast 0.03
+    --min-diameter 400    --min-sharpness 3.5
     --skip-duplicates     --move                 --legacy  (original v2 rule, for comparison)
 ```
 
 ### Results
 
-**SDAIA sample (51 photos, 35 unique).** The sorter marks 29 as gradeable and 22 as ungradeable: 13 too dark and 9 blurry. These are exactly the same decisions as the original v2 rule, but now each rejection comes with a reason based on the photo itself, not its file size. Blurry photos that aren't too dark score at most 1.4 for sharpness; gradeable photos score at least 51.
+**SDAIA sample (51 photos, 35 unique).** The sorter marks 29 as gradeable and 22 as ungradeable: 13 too dark, 7 blurry and 2 washed out. These are exactly the same decisions as the original v2 rule, but now each rejection comes with a reason based on the photo itself, not its file size. Blurry photos that aren't too dark score at most 1.4 for sharpness; gradeable photos score at least 51.
 
 **Decisions should depend on the photo, not the file** ([`experiments/robustness_check.py`](experiments/robustness_check.py), [output](results/robustness_check.txt)). I re-saved each of the 35 unique photos twice: as a low-quality JPEG (quality 60, shrunk to at most 2,000 px wide, never enlarged) and as a quality-100 JPEG:
 
@@ -80,7 +82,7 @@ python sort_images.py INPUT_DIR [--output DIR] [--report results.csv] [--dry-run
 
 **Stress test on 1,450 doctor-graded photos from other cameras.** These photos come from the DR grading dataset below. Doctors graded every one of them, so a good quality check should reject almost none.
 - **First defaults** (minimum diameter 1,000 px, and a sharpness check on an earlier, lighter-blur scale) rejected **364** of them. 331 were rejected for low resolution, but grading accuracy on those photos was just as good as on the rest ([output](results/quality_vs_grading.txt)). The resolution rule was really detecting the camera, the same problem the file-size rule had.
-- **Current defaults** reject **0** of the 1,450 ([output](results/stress_test_current_defaults.txt)), and still produce the same 29/22 split on the SDAIA sample. The lowest sharpness among them is 6.6, compared with the 3.5 threshold and at most 1.9 for the blurry SDAIA photos, even after re-saving them.
+- **Current defaults** reject **0** of the 1,450 ([output](results/stress_test_current_defaults.txt)), and still produce the same 29/22 split on the SDAIA sample. The lowest sharpness among them is 6.6, compared with the 3.5 threshold and at most 1.9 for the blurry SDAIA photos, even after re-saving them. The lowest contrast is 0.048, compared with the 0.03 threshold and 0.02 for the two washed-out SDAIA photos. That includes the 35 doctor-graded photos brighter than 200, which keep a contrast of at least 0.086.
 
 ### Measuring it against labels
 
@@ -111,16 +113,35 @@ python grading/train_grader.py \
 
 ### Test results (279 photos)
 
+The ranges in brackets are 95% confidence intervals: Wilson intervals for sensitivity, specificity and accuracy, and bootstrap intervals for AUC and kappa. They show how much each number could move with a different sample of 279 photos.
+
 | Metric | Result |
 |---|---|
-| **Any DR vs none** | AUC **0.997**, sensitivity **1.00**, specificity **0.965** |
-| **Referable DR** (grade 2 or higher) | AUC **0.942**, sensitivity 0.845, specificity 0.918 |
-| 5-grade agreement (quadratic weighted kappa) | **0.828** |
-| 5-grade accuracy | 0.785 (always guessing "no DR" would score 0.620) |
+| **Any DR vs none** | AUC **0.997** (0.993–1.000), sensitivity **1.00** (0.965–1.00), specificity **0.965** (0.926–0.984) |
+| **Referable DR** (grade 2 or higher) | AUC **0.942** (0.911–0.968), sensitivity 0.845 (0.753–0.907), specificity 0.918 (0.871–0.949) |
+| 5-grade agreement (quadratic weighted kappa) | **0.828** (0.770–0.880) |
+| 5-grade accuracy | 0.785 (0.733–0.829); always guessing "no DR" would score 0.620 |
 
 ![Confusion matrix](results/grader/confusion_matrix.png)
 
-The model reliably separates healthy from diseased eyes. Telling the disease grades apart is harder: it never predicts **Severe**, because only 7 of the training photos are grade 3, and it often confuses Mild and Moderate. Full metrics are in [`results/grader/metrics.json`](results/grader/metrics.json).
+On this split, the model reliably separates healthy from diseased eyes (but see the next section on how much the split flatters that). Telling the disease grades apart is harder: it never predicts **Severe**, because only 7 of the training photos are grade 3, and it often confuses Mild and Moderate. Full metrics are in [`results/grader/metrics.json`](results/grader/metrics.json).
+
+### Does the split matter?
+
+The numbers above come from one fixed train/test split. To check how much they depend on that split, [`experiments/repeated_cv.py`](experiments/repeated_cv.py) pools all 1,450 photos and runs 5 repeats of 5-fold cross-validation. Every photo is tested by a model that never saw it, and the regularisation is chosen inside each training fold ([output](results/grader/repeated_cv.txt)):
+
+| Metric | Fixed test split | Repeated cross-validation (mean, lowest–highest) |
+|---|---|---|
+| Kappa | 0.828 | 0.826 (0.822–0.832) |
+| Any-DR AUC | 0.997 | 0.983 (0.980–0.984) |
+| Any-DR sensitivity | 1.00 | **0.908** (0.901–0.915) |
+| Any-DR specificity | 0.965 | 0.967 (0.961–0.971) |
+| Referable-DR AUC | 0.942 | 0.975 (0.972–0.977) |
+| Referable-DR sensitivity | 0.845 | 0.831 (0.826–0.839) |
+
+Kappa and specificity hold up. **The perfect any-DR sensitivity does not: across all photos it is about 0.91.** Mild cases are what the model misses. About a quarter of them (16 of 59) are called healthy, against 7% of moderate cases and none of the severe or proliferative ones.
+
+The reason the fixed split looks perfect is that **its diseased photos are systematically easier, not just lucky.** Even when they're mixed into cross-validation, none of the test split's 22 mild cases is ever called healthy, while about 4 in 10 mild cases from the training folders are. The 95% interval for the fixed split (0.965–1.00) can't reveal this, because it only measures random sampling variation, not a difference between where the photos came from. Accuracy isn't comparable between the two columns either, because the pooled set is 80% grade 0 and the test split only 62%.
 
 ### Full pipeline
 
@@ -135,10 +156,10 @@ Each photo is either flagged for **re-imaging** or given a **grade, a confidence
 ## Limitations and next steps
 
 - **The sorter's thresholds are set from two small sets plus visual inspection, not from gradability labels.** The sharpness gap is clear on these sets (blurry photos score at most 1.9 even after re-saving, while the softest doctor-graded photo scores 6.6, against a threshold of 3.5), but they come from only a few cameras. The SDAIA metadata includes clinician gradability labels for 1,332 photos, and running `evaluate_sorter.py --tune` on those is the most important next step.
-- **Brightness can't tell "vivid" from "washed out".** A strongly lit but crisp photo and a fully washed-out one can have the same brightness. The sharpness check currently catches the washed-out case. A contrast or colour-saturation measure would be a more direct test.
+- **The contrast check only catches fully washed-out photos.** It cleanly separates the two pale, featureless SDAIA photos (contrast 0.02) from every doctor-graded photo (0.048 or more). Moderately hazy photos (0.07–0.10), however, overlap with sharp doctor-graded ones, so contrast alone can't reject them. The sharpness check catches those instead.
 - **The grader's backbone is frozen.** Fine-tuning ResNet18 end to end on a GPU (with augmentation) would likely improve the distinction between grades, especially Mild vs Moderate.
 - **There are too few severe cases.** Only 7 training photos are grade 3. More data, or merging grades into "refer / don't refer", would help.
-- **The grader dataset is small and imbalanced.** 85% of the training photos are grade 0, while the test split has much more disease (38%). The numbers above come from one fixed split and should be read as a first estimate.
+- **The grader dataset is small and imbalanced.** 85% of the training photos are grade 0, while the test split has much more disease (38%). The repeated cross-validation above shows the headline numbers are stable, apart from any-DR sensitivity, and that the fixed test split is easier than the rest. A separate test set from a different clinic or camera is still needed to know how the grader generalises.
 
 ## Project history
 
@@ -147,9 +168,9 @@ Each photo is either flagged for **re-imaging** or given a **grade, a confidence
 3. **v3 (current):**
    - Measurements are taken inside the retina only.
    - File size is replaced by resolution and sharpness. Sharpness is measured at blood-vessel scale, so JPEG compression doesn't affect it.
-   - Added duplicate detection and an evaluation and tuning tool.
+   - Added a contrast check for washed-out photos, duplicate detection, and an evaluation and tuning tool.
    - Thresholds were stress-tested on doctor-graded photos.
-   - Added the DR grader and the full pipeline.
+   - Added the DR grader and the full pipeline, with confidence intervals and repeated cross-validation.
 
 ## Data
 

@@ -32,6 +32,7 @@ POSITIVE = {"gradable", "gradeable", "yes", "y", "1", "true", "good"}
 SEARCH_GRID = {
     "min_brightness": [30, 40, 50, 60, 70],
     "max_brightness": [200, 220, 240, 256],
+    "min_contrast": [0.0, 0.02, 0.03, 0.04, 0.06],
     "min_diameter_px": [0, 400, 600, 800, 1000],
     "min_sharpness": [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 7.0, 10.0],
 }
@@ -61,6 +62,7 @@ def predict(df, t: quality.Thresholds):
     return (
         df["brightness"].ge(t.min_brightness)
         & df["brightness"].le(t.max_brightness)
+        & df["contrast"].ge(t.min_contrast)
         & df["diameter_px"].ge(t.min_diameter_px)
         & df["sharpness"].ge(t.min_sharpness)
     ).to_numpy()
@@ -124,7 +126,8 @@ def main():
     readable = df["label"].ne("skipped").to_numpy()
     if not readable.all():
         print(f"  {np.sum(~readable)} images could not be read and are counted as rejected")
-    df[["brightness", "diameter_px", "sharpness"]] = df[["brightness", "diameter_px", "sharpness"]].fillna(-1)
+    cols = ["brightness", "contrast", "diameter_px", "sharpness"]
+    df[cols] = df[cols].fillna(-1)
 
     default = quality.Thresholds()
     print_scores("Default thresholds", scores(y, predict(df, default)))
