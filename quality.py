@@ -10,12 +10,14 @@ Measurements
 brightness   Mean HSV value (0-255) inside the retina.
 diameter_px  Diameter of the retina in the original image, in pixels.
              A direct measure of resolution, independent of JPEG compression.
-sharpness    Variance of the Laplacian of the green channel, after the retina
-             is resized to a fixed size and lightly blurred. The resize makes
-             photos from different cameras comparable; the blur suppresses
-             sensor grain so the score reflects real edges such as vessels.
-             The green channel is used because vessels have the most
-             contrast there.
+sharpness    Variance of the Laplacian of the green channel (x1000 for
+             readability), after the retina is placed on a square canvas,
+             resized to a fixed size and blurred. The resize makes photos
+             from different cameras comparable. The blur is deliberately
+             strong: it removes sensor grain and JPEG compression artifacts,
+             so the score reflects structures at the scale of blood vessels
+             rather than how the file was saved. The green channel is used
+             because vessels have the most contrast there.
 """
 
 from dataclasses import dataclass, asdict
@@ -25,10 +27,14 @@ import numpy as np
 
 # Size the retina is resampled to before measuring sharpness, so the score
 # does not depend on the camera's resolution.
-SHARPNESS_SIZE = 768
+SHARPNESS_SIZE = 512
 # Blur (Gaussian sigma, in pixels at SHARPNESS_SIZE) applied before the
-# Laplacian to remove sensor noise.
-SHARPNESS_BLUR_SIGMA = 1.5
+# Laplacian. Lighter blur (e.g. 1.5 px at 768) let JPEG blocking artifacts
+# raise the score of blurry photos above that of sharp ones; at this scale
+# re-saving a photo barely changes its score.
+SHARPNESS_BLUR_SIGMA = 3.5
+# Raw scores are small; multiply for readability.
+SHARPNESS_SCALE = 1000.0
 # Only the central part of the retina is used for sharpness, so the hard
 # edge between the retina and the black background is not counted.
 SHARPNESS_INNER_FRACTION = 0.85
@@ -43,7 +49,7 @@ class Thresholds:
     min_brightness: float = 50      # below: underexposed
     max_brightness: float = 240     # above: saturated (washed-out photos are also caught as blurry)
     min_diameter_px: int = 400      # below: thumbnail-sized, too few pixels to grade
-    min_sharpness: float = 0.05     # below: blurry / out of focus
+    min_sharpness: float = 3.5      # below: blurry / out of focus
 
 
 @dataclass
@@ -96,16 +102,11 @@ def measure(image_bgr):
     hsv_value = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)[:, :, 2]
     brightness = float(hsv_value[circle_mask(image_bgr.shape, cx, cy, r * 0.95)].mean())
 
-    # Sharpness: crop the retina, resample to a fixed size, denoise, Laplacian.
-    h, w = image_bgr.shape[:2]
-    x0, y0 = max(0, int(cx - r)), max(0, int(cy - r))
-    x1, y1 = min(w, int(cx + r)), min(h, int(cy + r))
-    green = image_bgr[y0:y1, x0:x1, 1]
-    n = SHARPNESS_SIZE
-    green = cv2.resize(green, (n, n), interpolation=cv2.INTER_AREA).astype(np.float32)
-    green = cv2.GaussianBlur(green, (0, 0), SHARPNESS_BLUR_SIGMA)
-    inner = circle_mask((n, n), n / 2, n / 2, n / 2 * SHARPNESS_INNER_FRACTION)
-    sharpness = float(cv2.Laplacian(green, cv2.CV_32F)[inner].var())
+    # Sharpness: place the retina on a square canvas, resample to a fixed size,
+    # denoise, Laplacian. Fundus cameras often cut off the top and bottom of
+    # the retina; padding (instead of stretching the visible part to a square)
+    # keeps the geometry the same for every photo.
+    sharpness = _sharpness(image_bgr[:, :, 1], cx, cy, r)
 
     return Measurements(
         retina_found=True,
@@ -113,6 +114,28 @@ def measure(image_bgr):
         diameter_px=2 * r,
         sharpness=sharpness,
     )
+
+
+def _sharpness(green, cx, cy, r):
+    h, w = green.shape
+    side = max(1, int(round(2 * r)))
+    x0, y0 = int(round(cx - r)), int(round(cy - r))
+    canvas = np.zeros((side, side), np.uint8)
+    inside = np.zeros((side, side), np.uint8)
+    sx0, sy0 = max(0, x0), max(0, y0)
+    sx1, sy1 = min(w, x0 + side), min(h, y0 + side)
+    canvas[sy0 - y0:sy1 - y0, sx0 - x0:sx1 - x0] = green[sy0:sy1, sx0:sx1]
+    inside[sy0 - y0:sy1 - y0, sx0 - x0:sx1 - x0] = 255
+
+    n = SHARPNESS_SIZE
+    g = cv2.resize(canvas, (n, n), interpolation=cv2.INTER_AREA).astype(np.float32)
+    g = cv2.GaussianBlur(g, (0, 0), SHARPNESS_BLUR_SIGMA)
+    # Measure only where the photo has real pixels: inside the central circle
+    # and away from any edge where the image was cut off.
+    inside = cv2.resize(inside, (n, n), interpolation=cv2.INTER_NEAREST)
+    inside = cv2.erode(inside, np.ones((9, 9), np.uint8)) > 0
+    region = circle_mask((n, n), n / 2, n / 2, n / 2 * SHARPNESS_INNER_FRACTION) & inside
+    return float(cv2.Laplacian(g, cv2.CV_32F)[region].var()) * SHARPNESS_SCALE
 
 
 def decide(m: Measurements, t: Thresholds):
@@ -146,5 +169,5 @@ def legacy_decide(image_bgr, file_size_bytes, brightness_limit=35, size_threshol
 def as_dict(m: Measurements):
     d = asdict(m)
     for key in ("brightness", "diameter_px", "sharpness"):
-        d[key] = round(d[key], 3 if key == "sharpness" else 1)
+        d[key] = round(d[key], 2 if key == "sharpness" else 1)
     return d

@@ -5,8 +5,9 @@ on what is *in* it?
 For every image in INPUT_DIR this script creates re-saved copies that keep
 the visual content the same but change the file:
 
-  smaller_jpeg   downscaled to 2000 px wide, JPEG quality 60  (much smaller file)
-  larger_jpeg    saved again at JPEG quality 100              (much larger file)
+  smaller_jpeg   shrunk to at most 2000 px wide (never enlarged), JPEG quality 60
+                 (much smaller file)
+  larger_jpeg    saved again at JPEG quality 100  (much larger file)
 
 A good quality check should give every copy the same decision as the
 original. The script compares the original v2 rule (file size + whole-image
@@ -28,10 +29,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import quality  # noqa: E402
 from sort_images import list_images, find_duplicates  # noqa: E402
 
+MAX_WIDTH = 2000
+
+
+def shrink(img, max_width=MAX_WIDTH):
+    """Downscale to at most max_width pixels wide; smaller images are left as they are."""
+    h, w = img.shape[:2]
+    if w <= max_width:
+        return img
+    return cv2.resize(img, (max_width, round(h * max_width / w)), interpolation=cv2.INTER_AREA)
+
+
 VARIANTS = {
-    "smaller_jpeg": lambda img: (cv2.resize(img, (2000, int(img.shape[0] * 2000 / img.shape[1])),
-                                            interpolation=cv2.INTER_AREA),
-                                 [cv2.IMWRITE_JPEG_QUALITY, 60]),
+    "smaller_jpeg": lambda img: (shrink(img), [cv2.IMWRITE_JPEG_QUALITY, 60]),
     "larger_jpeg": lambda img: (img, [cv2.IMWRITE_JPEG_QUALITY, 100]),
 }
 

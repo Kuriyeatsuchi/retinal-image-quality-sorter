@@ -1,0 +1,22 @@
+Stress test: current sorter defaults on 1,450 doctor-graded retinal photos
+(the DR grading dataset: train, validation and test folders; every photo has a 0-4 grade from a clinician,
+ so a good quality check should reject almost none of them)
+
+Command, per folder:  python sort_images.py FOLDER --dry-run --report report.csv
+quality.py sha256: f7fcf0e91c4510be8a880686a615987c6cb4c4120eb427be767454e8cc0b9d2d
+
+--- train_images
+1051 images: 1051 gradeable, 0 ungradeable, 0 skipped in 16.37s
+1 files are exact duplicates of another file
+
+--- val_images
+120 images: 120 gradeable, 0 ungradeable, 0 skipped in 1.86s
+
+--- test_images
+279 images: 279 gradeable, 0 ungradeable, 0 skipped in 6.78s
+2 files are exact duplicates of another file
+
+--- all 1450 photos: 1450 gradeable
+sharpness   min 6.62   1st percentile 13.73   median 58.75   (threshold 3.5)
+brightness  min 70.7   max 220.2   (limits 50 - 240)
+diameter    min 495 px   median 1081 px   (minimum 400 px)

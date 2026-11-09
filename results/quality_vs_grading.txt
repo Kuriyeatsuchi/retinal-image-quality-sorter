@@ -1,4 +1,5 @@
---- old defaults (min diameter 1000, min sharpness 0.15)
+--- First version of the v3 defaults (min diameter 1000 px; min sharpness 0.15 on the earlier,
+--- lighter-blur sharpness scale). Kept because it shows why the resolution limit was lowered.
 
 All photos
   by sorter decision:

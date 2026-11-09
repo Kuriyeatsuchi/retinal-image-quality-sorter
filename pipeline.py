@@ -6,6 +6,10 @@ Two-step screening pipeline:
 
 Only photos that pass step 1 are graded; the rest are flagged for re-imaging.
 
+NOT A MEDICAL DEVICE. This is a research and education project. It has not
+been clinically validated and must not be used to diagnose patients or make
+referral decisions.
+
 Usage:
     python pipeline.py IMAGE_DIR --grader results/grader/grader.joblib [--out results.csv]
 """
@@ -24,6 +28,9 @@ from sort_images import list_images
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "grading"))
 from features import FeatureExtractor  # noqa: E402
 
+DISCLAIMER = ("RESEARCH / EDUCATION ONLY - not a medical device and not clinically validated. "
+              "Do not use these results to diagnose patients or make referral decisions.")
+
 
 def main():
     p = argparse.ArgumentParser(description="Quality check, then grade diabetic retinopathy.")
@@ -32,6 +39,7 @@ def main():
     p.add_argument("--out", help="Write results to this CSV")
     args = p.parse_args()
 
+    print(DISCLAIMER + "\n")
     bundle = joblib.load(args.grader)
     model, grade_names = bundle["model"], bundle["grade_names"]
     extractor = FeatureExtractor()
@@ -67,6 +75,7 @@ def main():
             writer.writeheader()
             writer.writerows(rows)
         print(f"\nResults written to {args.out}")
+    print("\n" + DISCLAIMER)
 
 
 if __name__ == "__main__":
